@@ -1,16 +1,16 @@
 #intermission
 
 
-intermission is a bit of [OpenResty](http://openresty.org) magic written in Lua to help you perform zero down time maintenance. At [37signals](http://37signals.com) we use this to perform database maintenance with limited impact to the user (especially when combined with [mysql\_role\_swap](https://github.com/37signals/mysql_role_swap/).
+intermission is a bit of [OpenResty](http://openresty.org) magic written in Lua to help you perform zero down time maintenance. At [37signals](http://37signals.com) we use this to perform database maintenance with limited impact to the user (especially when combined with [mysql\_role\_swap](https://github.com/37signals/mysql_role_swap/). In our use cases, we "hold" the users requests for less than 10 seconds while we do our database maintenance. The user sees a single long request, and things carry right along.
 
-## Design Concepts:
+## Design Concepts
 Put an incoming web request on hold long enough to do bad things behind the scenes. Release the incoming requests in the same order they were received. Have limited dependencies ([redis](http://redis.io)).
 
-## Improvements:
+## Improvements
 + The current use of redis lists makes requests vulnerable to being forever paused. We can either add a global timeout or do some other magic to make item removal from the lists less vulnerable.
 + We could also abandon the use of redis and just track things on each local Nginx instance.
 
-## Gotchas:
+## Gotchas
 Requests can only be paused as long the device sitting in front of it will allow. If you have [haproxy](haproxy.1wt.eu) deployed in front of your Nginx instance, make sure to check your "srvtimeout" values.
 
 # Getting started
@@ -20,7 +20,7 @@ Requests can only be paused as long the device sitting in front of it will allow
 + Make sure you add the [lua-resty-redis](https://github.com/agentzh/lua-resty-redis) module in the right spot if it's not already there.
 + Install and setup a [redis](http://redis.io) instance.
 
-### Trying it Out
+### Trying it Out (Local)
 
 + Run redis-server
 + Copy all of the files (except this one!) to /usr/local/openresty/nginx/conf (assuming a default installation).

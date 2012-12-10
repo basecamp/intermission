@@ -1,7 +1,7 @@
 #intermission
 
 
-intermission is a bit of [OpenResty](http://openresty.org) magic written in Lua to help you perform zero down time maintenance. At [37signals](http://37signals.com) we use this to perform database maintenance with limited impact to the user (especially when combined with [mysql\_role\_swap](https://github.com/37signals/mysql_role_swap/). In our use cases, we "hold" the users requests for less than 10 seconds while we do our database maintenance. The user sees a single long request, and things carry right along.
+intermission is a bit of [OpenResty](http://openresty.org) magic written in Lua to help you perform zero down time maintenance. At [37signals](http://37signals.com) we use this to perform application maintenance with limited/no impact to the user. In our use cases, we "hold" the users requests for less than 10 seconds while we do our database maintenance via [mysql\_role\_swap](https://github.com/37signals/mysql_role_swap/). The user sees a single long request, and things carry right along.
 
 ## Design Concepts
 Put an incoming web request on hold long enough to do bad things behind the scenes. Release the incoming requests in the same order they were received. Have limited dependencies ([redis](http://redis.io)).

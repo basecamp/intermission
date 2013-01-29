@@ -11,7 +11,7 @@ Put an incoming web request on hold long enough to do bad things behind the scen
 + We could also abandon the use of redis and just track things on each local Nginx instance.
 
 ## Gotchas
-Requests can only be paused as long the device sitting in front of it will allow. If you have [haproxy](haproxy.1wt.eu) deployed in front of your Nginx instance, make sure to check your "srvtimeout" values.
+Requests can only be paused as long as the device sitting in front of it will allow. If you have [haproxy](haproxy.1wt.eu) deployed in front of your Nginx instance, make sure to check your "srvtimeout" values.
 
 # Getting started
 ### Installation

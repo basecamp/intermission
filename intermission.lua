@@ -3,6 +3,7 @@ local sleep_time = tonumber(ngx.var.intermission_interval)
 local max_time = tonumber(ngx.var.intermission_max_time)
 local pausedreqs = ngx.shared.pausedreqs
 local health_check_path = ngx.var.intermission_health_check_path
+local privileged_user_agent = ngx.var.intermission_privileged_user_agent
 local app_name
 local enabled_key
 local id_key
@@ -24,6 +25,12 @@ if pausedreqs:get(enabled_key) then
   --Pass healthchecks no matter what.
   if ngx.var.uri == health_check_path or ngx.var.uri == '/up' then
     ngx.log(ngx.DEBUG, 'Passing through health check request.')
+    return
+  end
+
+  --Pass special user agent no matter what. (Pingdom perhaps?)
+  if string.match(ngx.var.http_user_agent, privileged_user_agent) then
+    ngx.log(ngx.DEBUG, 'Passing through privileged user agent request.')
     return
   end
 

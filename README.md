@@ -39,7 +39,7 @@ If you have many virtual hosts running on one nginx instance, you most likely do
 
 ### Customizing Intermission's Behavior
 
-What if your health check isn't at `/up`? Simply override the $intermission\_health\_check_path in the nginx config.  What if you want a longer max pause time?  Override $intermission\_max\_time in the nginx config:
+What if your health check isn't at `/up`? Simply override the $intermission\_health\_check\_path in the nginx config.  What if you want a longer max pause time?  Override $intermission\_max\_time in the nginx config.  What if there's an external service like Pingdom and you always want their checks to succeed? Override $intermission\_privileged\_user\_agent in the nginx config:
 
      server {
         listen       80;
@@ -49,6 +49,7 @@ What if your health check isn't at `/up`? Simply override the $intermission\_hea
           error_log  logs/intermission-error.log debug;
           set $intermission_max_time 300; #seconds
           set $intermission_health_check_path /up/database;
+          set $intermission_privileged_user_agent "Pingdom";
           access_by_lua_file intermission/intermission.lua;
           proxy_pass http://google.com;
         }

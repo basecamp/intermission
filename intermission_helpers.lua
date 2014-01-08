@@ -22,8 +22,6 @@ else
   enabled = pausedreqs:get(enabled_key)
 end
 
-ngx.log(ngx.ERR, 'enabled: '..enabled_key)
-
 if ngx.var.uri == '/_intermission/status' then
   if enabled then
     ngx.say("Pause enabled.")

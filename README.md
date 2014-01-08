@@ -69,6 +69,11 @@ Github issues and pull requests are checked regularly.
 ## Contributing
 Pull requests with passing tests (there are no tests!) are welcomed and appreciated.
 
+## Contributors
+
+ * Taylor Weibley
+ * Nathan Anderson
+
 # License
 
      Copyright (c) 2012 37signals (37signals.com)

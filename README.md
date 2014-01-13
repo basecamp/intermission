@@ -19,7 +19,7 @@ Requests can only be paused as long the device sitting in front of it will allow
 + Hit [http://localhost:8080/_intermission/enable](http://localhost:8080/_intermission/enable).
 + Hit [http://localhost:8080/_intermission/status](http://localhost:8080/_intermission/status). (you should see "Pause Enabled")
 + Hit [http://localhost:8080](http://localhost:8080) (you should see nothing)
-+ Hit [http://localhost:8080/control](http://localhost:8080/_intermission/disable).
++ Hit [http://localhost:8080/_intermission/disable](http://localhost:8080/_intermission/disable).
 + (Your request should have gone through now...)
 
 ## Advanced Usage

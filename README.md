@@ -71,8 +71,9 @@ Pull requests with passing tests (there are no tests!) are welcomed and apprecia
 
 ## Contributors
 
- * Taylor Weibley
- * Nathan Anderson
+ * [Taylor Weibley](https://github.com/tweibley)
+ * [Matthew Kent](https://github.com/mdkent)
+ * [Nathan Anderson](https://github.com/anoldguy)
 
 # License
 

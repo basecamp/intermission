@@ -29,9 +29,11 @@ if pausedreqs:get(enabled_key) then
   end
 
   --Pass special user agent no matter what. (Pingdom perhaps?)
-  if string.match(ngx.var.http_user_agent, privileged_user_agent) then
-    ngx.log(ngx.DEBUG, 'Passing through privileged user agent request.')
-    return
+  if ngx.var.http_user_agent and ngx.var.http_user_agent ~= '' then
+    if string.match(ngx.var.http_user_agent, privileged_user_agent) then
+      ngx.log(ngx.DEBUG, 'Passing through privileged user agent request.')
+      return
+    end
   end
 
   --Auto inc counter for each paused request

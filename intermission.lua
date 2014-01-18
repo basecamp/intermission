@@ -1,73 +1,76 @@
---Copyright 2012 37signals / Taylor Weibley
-local x_pause_id = ngx.var.x_request_id;
-local sleep_time = ngx.var.intermission_interval;
-ngx.log(ngx.ERR, "Redis IP: " .. ngx.var.redis_ip .. " and Port: " .. ngx.var.redis_port)
+--Copyright 2012-2014 37signals / Taylor Weibley
+local sleep_time = tonumber(ngx.var.intermission_interval)
+local max_time = tonumber(ngx.var.intermission_max_time)
+local pausedreqs = ngx.shared.pausedreqs
+local health_check_path = ngx.var.intermission_health_check_path
+local privileged_user_agent = ngx.var.intermission_privileged_user_agent
+local app_name
+local enabled_key
+local id_key
+local paused_key
 
-local redis = require "resty.redis"
-local redis_key_prefix = ngx.var.redis_key_prefix;
-local red = redis:new()
-red:set_timeout(ngx.var.x_redis_timeout)
-
--- Try to connect to redis and log an error if that fails and pass the request through.
-local ok, err = red:connect(ngx.var.redis_ip, ngx.var.redis_port)
-if not ok then
-  ngx.log(ngx.ERR, "Failed to connect to redis: " .. err)
-  return
+--Check for app_name and 'scope' keys with it.
+if ngx.var.app_name == nil then
+  enabled_key = "enabled"
+  id_key = "id"
+  paused_key = "paused"
+else
+  app_name = tostring(ngx.var.app_name)
+  enabled_key = "enabled_" .. app_name
+  id_key = "id" .. app_name
+  paused_key = "paused_" .. app_name
 end
 
--- Ask redis for the pause key, if it's not there pass the request through.
-local res, err = red:get(redis_key_prefix .. 'pause')
-if not res then
-  ngx.log(ngx.ERR, "Failed to get pause key: " .. err)
-  return
-end
-
--- We've got a result and we need to either pass the request (not paused) or hold on to it (paused).
-if res == ngx.null then -- not in pause mode
-  -- Put it into the connection pool of size 5, with 0 idle timeout.
-  local ok, err = red:set_keepalive(0, 5)
-  if not ok then
-    ngx.log(ngx.ERR, "Failed to set keepalive: " .. err)
+if pausedreqs:get(enabled_key) then
+  --Pass healthchecks no matter what.
+  if ngx.var.uri == health_check_path or ngx.var.uri == '/up' then
+    ngx.log(ngx.DEBUG, 'Passing through health check request.')
+    return
   end
-  return
+
+  --Pass special user agent no matter what. (Pingdom perhaps?)
+  if ngx.var.http_user_agent and ngx.var.http_user_agent ~= '' then
+    if string.match(ngx.var.http_user_agent, privileged_user_agent) then
+      ngx.log(ngx.DEBUG, 'Passing through privileged user agent request.')
+      return
+    end
+  end
+
+  --Auto inc counter for each paused request
+  if pausedreqs:get(id_key) == nil then
+    pausedreqs:set(id_key, 0)
+  end
+
+  --Increment the id
+  local id = pausedreqs:incr(id_key, 1)
+  ngx.log(ngx.DEBUG, 'Pause id:' .. id)
+
+  --Add to our queue of paused requests
+  local succ, err = pausedreqs:add(paused_key .. id, 1)
+
+  if succ then
+    ngx.log(ngx.DEBUG, 'Pause id added ' .. tostring(succ))
+
+    local wait_time = 0;
+
+    repeat
+      --First check the global state then check if the request ahead of us is still here
+      if pausedreqs:get(enabled_key) == nil and pausedreqs:get(paused_key .. id - 1) == nil then
+        ngx.log(ngx.DEBUG, "Unpause id: " .. id .. " after " .. wait_time .. " seconds")
+        pausedreqs:delete(paused_key .. id)
+        return
+      else
+        ngx.sleep(sleep_time)
+        wait_time = wait_time + sleep_time
+        --Warning will be *very* noisy with a small sleep_time
+        ngx.log(ngx.DEBUG, 'Pause id:' .. id .. ' waiting for ' .. wait_time .. ' seconds total')
+      end
+    until wait_time > max_time
+  else
+    ngx.log(ngx.err, 'Failed to add pause id.')
+  end
 
 else
-  -- We are pausing...
-  ngx.log(ngx.ERR, "Entering pause mode: " .. x_pause_id)
-
-  local count = 0; 
-  while true do
-    -- On the first loop add our req_id to the list.
-    if count == 0 then
-      local ok, err = red:lpush(redis_key_prefix .. 'paused', x_pause_id)
-      if not ok then
-        ngx.log(ngx.ERR, "failed to lpush: " .. err)
-      end
-    end
-
-    -- It is possible we are already unpaused, so lets check.
-    local res, err = red:get(redis_key_prefix .. 'pause')
-    if res == ngx.null then
-      local val, err = red:lindex(redis_key_prefix .. 'paused', -1)
-      if val == x_pause_id then
-        ngx.log(ngx.ERR, "Ready to exit pause because req_id " .. x_pause_id .. " is last on list: " .. val)
-        local ok, err = red:rpop(redis_key_prefix .. 'paused') -- remove ourself from the list
-        -- If the operation fails, we need to bail out
-        if not ok then
-              ngx.log(ngx.ERR, "failed to rpop: " .. err)
-              return
-        end
-        ngx.log(ngx.ERR, "Exiting pause mode after " .. count .. " seconds" .. " for req_id " .. val)
-        local ok, err = red:set_keepalive(0, 5)
-        if not ok then
-          ngx.log(ngx.ERR, "Failed to set keepalive: " .. err)
-          return
-        end
-        break
-      end
-    end
-    -- Pause for however long and update the count of seconds.
-    ngx.sleep(sleep_time)
-    count = count + sleep_time;
-  end
+  --Self explanatory
+  return
 end

@@ -1,6 +1,5 @@
 #intermission
 
-
 intermission is a bit of [OpenResty](http://openresty.org) magic written in Lua to help you perform zero down time maintenance. At [37signals](http://37signals.com) we use this to perform application maintenance with limited/no impact to the user. In our use cases, we "hold" the users requests for less than 10 seconds while we do our database maintenance via [mysql\_role\_swap](https://github.com/37signals/mysql_role_swap/). The user sees a single long request, and things carry right along.
 
 ## Design Concepts
@@ -11,25 +10,70 @@ Requests can only be paused as long the device sitting in front of it will allow
 
 # Getting started
 
-### Trying it Out (Local)
+## Trying it Out (Local)
 
-+ Copy all of the files (except this one!) to /usr/local/openresty/nginx/conf (assuming a default installation).
-+ Run /usr/local/openresty/nginx/sbin/nginx -c conf/sample-nginx.conf.
-+ Tail /usr/local/openresty/nginx/log/intermission-error.log.
++ Run `vagrant up` (This will download the image, boot it, and compile and install openresty)
++ Run `vagrant ssh`
++ Run `tail -f /usr/local/openresty/nginx/logs/intermission-error.log`
 + Hit [http://localhost:8080](http://localhost:8080) (you should see google)
-+ Hit [http://localhost:8080/control](http://localhost:8080/control).
++ Hit [http://localhost:8080/_intermission/enable](http://localhost:8080/_intermission/enable).
++ Hit [http://localhost:8080/_intermission/status](http://localhost:8080/_intermission/status). (you should see "Pause Enabled")
 + Hit [http://localhost:8080](http://localhost:8080) (you should see nothing)
-+ Hit [http://localhost:8080/control](http://localhost:8080/control).
++ Hit [http://localhost:8080/_intermission/disable](http://localhost:8080/_intermission/disable).
 + (Your request should have gone through now...)
+
+## Advanced Usage
+
+### Many Virtual Hosts
+
+If you have many virtual hosts running on one nginx instance, you most likely don't want to pause all of them.  You can scope the pause to a virtual server by setting $app_name in the server directive of the virtual host:
+
+    server {
+      # Stick the app name in an nginx variable for use with intermission.
+      # Since we want it set for all of the app requests, set it at the 
+      # server level.
+      set $app_name <%= @app_name %>; 
+
+      # ... rest of config ...
+     }
+
+### Customizing Intermission's Behavior
+
+What if your health check isn't at `/up`? Simply override the $intermission\_health\_check\_path in the nginx config.  What if you want a longer max pause time?  Override $intermission\_max\_time in the nginx config.  What if there's an external service like Pingdom and you always want their checks to succeed? Override $intermission\_privileged\_user\_agent in the nginx config:
+
+     server {
+        listen       80;
+        server_name  localhost;
+
+        location / {
+          error_log  logs/intermission-error.log debug;
+          set $intermission_max_time 300; #seconds
+          set $intermission_health_check_path /up/database;
+          set $intermission_privileged_user_agent "Pingdom";
+          access_by_lua_file intermission/intermission.lua;
+          proxy_pass http://google.com;
+        }
+        # Hit /_intermission/[status,disable,enable]
+        location /_intermission {
+          content_by_lua_file intermission/intermission_helpers.lua;
+        }
+    }
+
 
 # Getting help and contributing
 
-### Getting help with intermission
+## Getting help with intermission
 The fastest way to get help is to send an email to intermission@librelist.com. 
 Github issues and pull requests are checked regularly.
 
-### Contributing
+## Contributing
 Pull requests with passing tests (there are no tests!) are welcomed and appreciated.
+
+## Contributors
+
+ * [Taylor Weibley](https://github.com/tweibley)
+ * [Matthew Kent](https://github.com/mdkent)
+ * [Nathan Anderson](https://github.com/anoldguy)
 
 # License
 

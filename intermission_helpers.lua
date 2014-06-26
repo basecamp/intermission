@@ -28,7 +28,7 @@ if ngx.var.uri == '/_intermission/status' then
   else
     ngx.say("Pause disabled.")
   end
-  
+
   ngx.exit(200)
 
 elseif ngx.var.uri == '/_intermission/enable' then
@@ -37,13 +37,13 @@ elseif ngx.var.uri == '/_intermission/enable' then
     ngx.say("Pause already enabled.")
     ngx.exit(304)
   end
-  
+
   pausedreqs:flush_all()
   pausedreqs:set(enabled_key, true)
   ngx.log(ngx.ERR, 'Pause enabled')
   ngx.say("Pause enabled.")
   ngx.exit(200)
-  
+
 elseif ngx.var.uri == '/_intermission/disable' then
   if not enabled then
     ngx.status = 304
@@ -51,9 +51,17 @@ elseif ngx.var.uri == '/_intermission/disable' then
     ngx.exit(304)
   end
 
-  local id = pausedreqs:get(id_key)
+  -- Unpause requests
   pausedreqs:delete(enabled_key)
-  ngx.log(ngx.ERR, 'Pause disabled.')
+
+  -- Say how many connections we paused after we let them all go.
+  local id = pausedreqs:get(id_key)
+
+  if id == nil then
+    id = 0
+  end
+
+  ngx.log(ngx.ERR, 'Pause disabled. ' .. id .. ' requests were held in-flight.')
 
   ngx.say("Pause disabled.")
   ngx.exit(200)

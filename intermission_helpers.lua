@@ -55,13 +55,9 @@ elseif ngx.var.uri == '/_intermission/disable' then
   pausedreqs:delete(enabled_key)
 
   -- Say how many connections we paused after we let them all go.
-  local id = pausedreqs:get(id_key)
+  local paused_count = tonumber(pausedreqs:get(id_key)) or 0
 
-  if id == nil then
-    id = 0
-  end
-
-  ngx.log(ngx.ERR, 'Pause disabled. ' .. id .. ' requests were held in-flight.')
+  ngx.log(ngx.ERR, 'Pause disabled. ' .. paused_count .. ' requests were held in-flight.')
 
   ngx.say("Pause disabled.")
   ngx.exit(200)

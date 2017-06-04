@@ -6,7 +6,7 @@ intermission is a bit of [OpenResty](http://openresty.org) magic written in Lua 
 Put an incoming web request on hold long enough to do bad things behind the scenes. Release the incoming requests in the same order they were received. Has zero dependencies.
 
 ## Gotchas
-Requests can only be paused as long the device sitting in front of it will allow. If you have [haproxy](haproxy.1wt.eu) deployed in front of your Nginx instance, make sure to check your "srvtimeout" values.
+Requests can only be paused as long as the device sitting in front of it will allow. If you have [haproxy](haproxy.1wt.eu) deployed in front of your Nginx instance, make sure to check your "srvtimeout" values.
 
 # Getting started
 
